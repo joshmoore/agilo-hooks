@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+#
+# An example hook script for the "post-receive" event.
+#
+# The "post-receive" script is run after receive-pack has accepted a pack
+# and the repository has been updated.  It is passed arguments in through
+# stdin in the form
+#  <oldrev> <newrev> <refname>
+# For example:
+#  aa453216d1b3e49e7f6f98441fa56946ddcd6a20 68f7abf4e6f922807889f52bc043ecd31b79f814 refs/heads/master
+#
+# see contrib/hooks/ for an sample, or uncomment the next line and
+# rename the file to "post-receive".
+
+#. /usr/share/doc/git-core/contrib/hooks/post-receive-email
+
+import sys
+import logging
+from subprocess import Popen, PIPE
+
+GIT_PATH = '/usr/bin/git'
+BRANCHES = ['master']
+TRAC_ENV = '/var/www/trac.openmicroscopy.org.uk/agilo'
+REPO_NAME = 'spec'
+
+if False:
+    logging.basicConfig(filename="/tmp/hook.log", level=10)
+    STREAM = logging._handlers.keys()[0].stream
+else:
+    logging.basicConfig()
+    STREAM = sys.stderr
+
+def call(command):
+    p = Popen(command, stdout=STREAM, stderr=STREAM)
+    return p.wait()
+
+def call_git(command, args):
+    return Popen([GIT_PATH, command] + args, stdout=PIPE).communicate()[0]
+
+def handle_ref(old, new, ref):
+    # If something else than the master branch (or whatever is contained by the
+    # constant BRANCHES) was pushed, skip this ref.
+    if not ref.startswith('refs/heads/') or ref[11:] not in BRANCHES:
+        return
+
+    # Get the list of hashs for commits in the changeset.
+    args = (old == '0' * 40) and [new] or [new, '^' + old]
+    pending_commits = call_git('rev-list', args).splitlines()[::-1]
+    logging.info("Pending: %s" % pending_commits)
+
+    if 0 != call(["trac-admin", TRAC_ENV, "changeset", "added", REPO_NAME] + pending_commits):
+        logging.error("Failed trac-admin changeset")
+        sys.exit(1)
+
+    for REV in pending_commits:
+        logging.info("REV: %s" % REV)
+        if 0 != call(["/homes/jmoore/hooks.git/agilo_svn_hook_commit.py", "-R", REPO_NAME, "-s", "post", "-e", TRAC_ENV, "-r", REV]):
+            logging.error("Failed agilo_svn_hook_commit.py %s" % REV)
+            sys.exit(1)
+
+if __name__ == '__main__':
+    logging.info("Starting")
+    logging.info("ARGS: %s" % sys.argv)
+    sha1 = call_git("log",["-1", "HEAD"])
+    #for line in sys.stdin: for post-receive
+    for line in [sha1,]:
+        logging.info("LINE: %s" % line)
+        handle_ref(*line.split())
+    logging.info("Done")
