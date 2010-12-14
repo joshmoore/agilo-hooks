@@ -51,14 +51,15 @@ TRAC_ENV='/var/lib/trac/test/'
 
 import sys
 import getopt
-from agilo.utils.svn_hooks import AgiloSVNPreCommit, AgiloSVNPostCommit
+from omero_svn_hooks import AgiloSVNPreCommit, AgiloSVNPostCommit
 
 help_message = '''
 Use as a SVN hook, options:
      -s --svn_hook= [pre|post] default to pre.
-     -e --env=      <trac_env> 
+     -e --env=      <trac_env>
      -l --log=      <svn_log>
      -r --rev=      <revision>, should be an integer.
+     -R --repo=     <repo>, the name of the multi-repository instance
 '''
 
 
@@ -71,13 +72,13 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
     try:
-        env = log = rev = None
+        env = log = rev = repo = None
         hook = 'pre'
         try:
-            opts, args = getopt.getopt(argv[1:], "he:l:s:r:", ["help", "env=", "svn_hook=", "log=", "rev="])
+            opts, args = getopt.getopt(argv[1:], "he:l:s:r:R:", ["help", "env=", "svn_hook=", "log=", "rev=", "repo="])
         except getopt.error, msg:
             raise Usage(msg)
-            
+
         # option processing
         for option, value in opts:
             if option in ("-h", "--help"):
@@ -91,20 +92,24 @@ def main(argv=None):
                     hook = value
             if option in ("-r", "--rev"):
                 rev = int(value)
+            if option in ("-R", "--repo"):
+                repo = value
         if (env is None or log is None) and (hook == 'post' and rev is None):
+            raise Usage(help_message)
+        elif repo is None:
             raise Usage(help_message)
         else:
             if hook == 'pre':
                 agilo_hook = AgiloSVNPreCommit(project=env, log=log)
             else:
-                agilo_hook = AgiloSVNPostCommit(project=env, rev=rev)
+                agilo_hook = AgiloSVNPostCommit(project=env, rev=rev, repo=repo)
             try:
                 if agilo_hook.execute():
                     return 0
             except Exception, e:
                 print >> sys.stderr, str(e)
                 return 2
-                
+
     except Usage, err:
         print >> sys.stderr, sys.argv[0].split("/")[-1] + ": " + str(err.msg)
         print >> sys.stderr, "\t for help use --help"

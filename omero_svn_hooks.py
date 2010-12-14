@@ -177,11 +177,12 @@ class AgiloSVNPostCommit(object):
     Tries to keep compatibility with the trac-post-commit-hook.py written
     by Stephen Hansen, Copyright (c) 2004 and distributed. 
     """
-    def __init__(self, project, rev, env=None):
+    def __init__(self, project, rev, repo, env=None):
         """Initialize the class with the project path and the revision"""
         try:
             self.env = env or Environment(project)
             self.tm = AgiloTicketModelManager(self.env)
+            self.repo = repo
             repos = self.env.get_repository()
             repos.sync()
         except Exception, e:
@@ -195,7 +196,7 @@ class AgiloSVNPostCommit(object):
             sys.exit(1)
         self.author = self.changeset.author
         self.rev = rev
-        self.message = "(In [%s]) %s" % (rev, self.changeset.message)
+        self.message = "(In [%s/%s]) %s" % (rev, self.repo, self.changeset.message)
     
     def execute(self):
         """Execute the parsed commands"""
