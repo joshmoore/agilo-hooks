@@ -96,8 +96,6 @@ def main(argv=None):
                 repo = value
         if (env is None or log is None) and (hook == 'post' and rev is None):
             raise Usage(help_message)
-        elif repo is None:
-            raise Usage(help_message)
         else:
             if hook == 'pre':
                 agilo_hook = AgiloSVNPreCommit(project=env, log=log)

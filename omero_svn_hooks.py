@@ -196,7 +196,8 @@ class AgiloSVNPostCommit(object):
             sys.exit(1)
         self.author = self.changeset.author
         self.rev = rev
-        self.message = "(In [%s/%s]) %s" % (rev, self.repo, self.changeset.message)
+        suffix = self.repo is not None and "/%s" % self.repo or ""
+        self.message = "(In [%s%s]) %s" % (rev, suffix, self.changeset.message)
     
     def execute(self):
         """Execute the parsed commands"""
