@@ -91,7 +91,7 @@ def main(argv=None):
                 if value == 'post':
                     hook = value
             if option in ("-r", "--rev"):
-                rev = int(value)
+                rev = value
             if option in ("-R", "--repo"):
                 repo = value
         if (env is None or log is None) and (hook == 'post' and rev is None):

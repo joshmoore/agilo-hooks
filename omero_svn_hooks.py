@@ -190,7 +190,7 @@ class AgiloSVNPostCommit(object):
             sys.exit(1)
         # Now let's read the last committed revision data
         try:
-            self.changeset = repos.get_changeset(int(rev))
+            self.changeset = repos.get_changeset(rev)
         except Exception, e:
             print >> sys.stderr, "Impossible to open revision: %s, due to the following error: %s" % (rev, to_unicode(e))
             sys.exit(1)
