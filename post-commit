@@ -1,0 +1,7 @@
+#!/bin/sh
+REPOS="$1"
+REV="$2"
+TRAC_ENV='/var/www/trac.openmicroscopy.org.uk/agilo/'
+/usr/bin/trac-admin "$TRAC_ENV" changeset added "$1" "$2"
+/usr/bin/agilo_svn_hook_commit.py -s post -e "$TRAC_ENV" -r "$REV" || exit 1
+
