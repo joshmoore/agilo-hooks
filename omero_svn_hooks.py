@@ -183,7 +183,7 @@ class AgiloSVNPostCommit(object):
             self.env = env or Environment(project)
             self.tm = AgiloTicketModelManager(self.env)
             self.repo = repo
-            repos = self.env.get_repository()
+            repos = self.env.get_repository(self.repo)
             repos.sync()
         except Exception, e:
             print >> sys.stderr, "An Error occurred while opening Trac project: %s => %s" % (project, to_unicode(e))
