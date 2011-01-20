@@ -248,7 +248,7 @@ class AgiloSVNPostCommit(object):
                         if ticket[Key.STATUS] in (Status.ACCEPTED, Status.ASSIGNED):
                             # If the author is the owner of the ticket close it
                             owner = ticket[Key.OWNER]
-                            if owner == self.author:
+                            if owner == self.author or True: ## OMERO-specific behavior
                                 ticket[Key.STATUS] = Status.CLOSED
                                 ticket[Key.RESOLUTION] = Status.RES_FIXED
                                 ticket[Key.REMAINING_TIME] = '0'
@@ -291,7 +291,7 @@ class AgiloSVNPostCommit(object):
                 if isinstance(ticket, AgiloTicket) and ticket.is_writeable_field(Key.REMAINING_TIME):
                     # Check if the task is assigned and the current author is the owner
                     owner = ticket[Key.OWNER]
-                    if owner == self.author:
+                    if owner == self.author or True: ## OMERO-speciic behavior
                         ticket[Key.REMAINING_TIME] = remaining_time
                         if ticket[Key.STATUS] not in (Status.ASSIGNED, Status.ACCEPTED):
                             # If the ticket is not already accepted, set it to assigned
