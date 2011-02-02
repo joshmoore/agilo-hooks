@@ -194,11 +194,21 @@ class AgiloSVNPostCommit(object):
         except Exception, e:
             print >> sys.stderr, "Impossible to open revision: %s, due to the following error: %s" % (rev, to_unicode(e))
             sys.exit(1)
+        try:
+            self.branches = [x[0] for x in self.changeset.get_branches()]
+        except:
+            self.branches = None
         self.author = self.changeset.author
         self.rev = rev
         suffix = self.repo is not None and "/%s" % self.repo or ""
-        self.message = "(In [%s%s]) %s" % (rev, suffix, self.changeset.message)
-    
+        if not self.branches:
+            branch = ""
+        elif len(self.branches) == 1:
+            branch = " on branch %s" % self.branches[0]
+        else:
+            branch = "on branches %s" % ", ".join(self.branches)
+        self.message = "(In [%s%s]%s) %s" % (rev, suffix, branch, self.changeset.message)
+
     def execute(self):
         """Execute the parsed commands"""
         #print "Commands: %s" % self.commands
