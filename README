@@ -1,0 +1,47 @@
+These are modifications of the agilo post-commit hooks
+which add support for multiple Trac repositories (+0.12).
+Throughout the code are hard-coded values for the OME trac
+instance (http://trac.openmicroscopy.org/ome), so only use
+these files as templates to base your own changes on.
+
+This code may have already been included in later agilo
+releases as https://dev.agile42.com/ticket/1086 is already
+closed.
+
+Directions
+==========
+
+ * Configuration a bare git (/home/git/ome.git):
+
+    [core]
+        repositoryformatversion = 0
+        filemode = true
+        bare = true
+        sharedrepository = 1
+    [receive]
+        denyNonFastforwards = true
+
+ * Link the post-receive under hooks:
+
+    ln -s `pwd`/post-receive /home/git/ome.git/hooks
+
+ * (optional) If you need post-commit instead, see
+   spec-post-commit. (Not used in production)
+
+Things to note
+==============
+
+ * agilo_svn_hook_commit.py has been modified to use
+   the omero_svn_hooks.py module. Upgrades to your
+   agilo installation will NOT change this behavior.
+   You will need to merge by hand.
+
+ * In post-receive, only certain branches are handled.
+   This allows temporary branches to be located on the
+   same repository without having tickets modified.
+
+ * omero_svn_hooks.py has several lines marked
+   "OMERO-specific behavior", which permits tickets to
+   be closed by non-authors even when they are not in
+   the "assigned" status.
+
