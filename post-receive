@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+#
+
+import os
+import sys
+import logging
+from subprocess import Popen, PIPE
+
+GIT_PATH = '/usr/bin/git'
+BRANCHES = ['master','develop','4_2','dev_4_2','4_1','dev_4_1','4_1_custom','dev_4_1_custom']
+TRAC_ENV = '/var/www/trac.openmicroscopy.org.uk/trac-omero'
+REPO_NAME = 'ome.git'
+
+if True:
+    userdir = os.path.expanduser("~")
+    logfile = os.path.join(userdir, ".agilo.log")
+    logging.basicConfig(filename=logfile, level=10)
+    STREAM = logging._handlers.keys()[0].stream
+else:
+    logging.basicConfig()
+    STREAM = sys.stderr
+
+def call(command):
+    p = Popen(command, stdout=STREAM, stderr=STREAM)
+    return p.wait()
+
+def call_git(command, args):
+    return Popen([GIT_PATH, command] + args, stdout=PIPE).communicate()[0]
+
+def handle_ref(old, new, ref):
+    # If something else than the master branch (or whatever is contained by the
+    # constant BRANCHES) was pushed, skip this ref.
+    if not ref.startswith('refs/heads/') or ref[11:] not in BRANCHES:
+        return
+
+    # Get the list of hashs for commits in the changeset.
+    args = (old == '0' * 40) and [new] or [new, '^' + old]
+    pending_commits = call_git('rev-list', args).splitlines()[::-1]
+    logging.info("Pending: %s" % pending_commits)
+
+    if 0 != call(["/usr/bin/trac-admin", TRAC_ENV, "changeset", "added", REPO_NAME] + pending_commits):
+        logging.error("Failed trac-admin changeset")
+        sys.exit(1)
+
+    for REV in pending_commits:
+        logging.info("REV: %s" % REV)
+        if 0 != call(["/homes/jmoore/hooks.git/agilo_svn_hook_commit.py", "-R", REPO_NAME, "-s", "post", "-e", TRAC_ENV, "-r", REV]):
+            logging.error("Failed agilo_svn_hook_commit.py %s" % REV)
+            sys.exit(1)
+
+if __name__ == '__main__':
+    logging.info("Starting")
+    logging.info("ARGS: %s" % sys.argv)
+
+    # for post commit
+    #sha1 = call_git("log",["-1", "HEAD"])
+    #for line in [sha1,]:
+
+    # for post-receive
+    for line in sys.stdin:
+        logging.info("LINE: %s" % line)
+        handle_ref(*line.split())
+    logging.info("Done")
